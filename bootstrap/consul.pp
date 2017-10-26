@@ -1,3 +1,23 @@
+# Consul server bootstrap script
+#
+# Generates the following artifacts, and stores them in
+# `/etc/simp/bootstrap/consul`:
+#
+#   1. master_token
+#   2. server.dc1.consul.private.pem
+#   3. server.dc1.consul.cert.pem
+#   4. ca.pem
+#   5. key
+#
+# Instantiates the `libkv::consul` class with:
+#
+#   dont_copy_files => true
+#   bootstrap       => true
+#   server          => true
+#
+
+# Directory generation
+#
 ensure_resource('file', '/etc/simp', {'ensure' => 'directory'})
 file { "/etc/simp/bootstrap/":
   ensure => directory,
@@ -5,6 +25,13 @@ file { "/etc/simp/bootstrap/":
 file { "/etc/simp/bootstrap/consul":
   ensure => directory,
 }
+
+# 1. Use `uuidgen` to create the master token
+# 2. Use `puppet cert generate` to create the Consul Cert/Key/CA
+# 3. Instatiate Consul via `libkv::consul`
+# 4. Once instantiated, use `consul keygen` to generate a traffic encryption key
+# 5. Set the `consul_bootstrap` fact to true
+#
 exec { "/usr/bin/uuidgen >/etc/simp/bootstrap/consul/master_token":
   creates => '/etc/simp/bootstrap/consul/master_token',
   require => File["/etc/simp/bootstrap/consul"],
